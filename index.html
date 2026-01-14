@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WhatsApp Micro Editor</title>
+    <title>WhatsApp True HD Editor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Dancing+Script:wght@700&family=Lobster&family=Noto+Sans+Telugu:wght@400;700&family=Poppins:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
         body { 
             font-family: 'Poppins', sans-serif; 
-            background-color: #0f172a; 
+            background-color: #000; 
             touch-action: none; 
             overflow: hidden; 
             width: 100vw; height: 100vh;
@@ -23,20 +23,22 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            background-color: #1e293b;
+            background-color: #111;
             position: relative;
         }
 
-        /* The Card */
+        /* The Card - Default Ratio */
         #preview-container {
             position: relative;
-            width: 360px;
-            aspect-ratio: 4/5;
-            background-color: #334155;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            width: 100%; 
+            max-width: 360px; /* Viewport limit */
+            /* Aspect ratio will be set by JS dynamically */
+            aspect-ratio: 4/5; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
             transform-origin: center center;
         }
 
+        /* Image Layers */
         #main-bg {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background-size: cover; background-position: center; z-index: 1;
@@ -45,100 +47,121 @@
         /* Wiper Box */
         #wiper-box {
             position: absolute;
-            top: 30%; left: 10%;
-            width: 60%; height: 15%;
+            top: 40%; left: 20%;
+            width: 60%; height: 10%;
             overflow: hidden;
             z-index: 5;
-            border: 1px dashed rgba(255, 255, 255, 0.9); /* Thinner border */
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            border-radius: 4px; /* Sharper corners for precision */
+            border: 1px dashed rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border-radius: 4px;
         }
         
         #wiper-bg {
             position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
+            /* Dimensions set by JS */
             background-size: cover; background-position: center;
-            filter: blur(12px); transform: scale(1.05);
+            filter: blur(15px); transform: scale(1.02); /* Slight scale to hide edges */
         }
 
-        /* Text Container - Optimized for Micro Text */
+        /* Text Container */
         #new-text-container {
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            min-width: 20px; /* Allow very small width */
-            max-width: 95%;
+            min-width: 20px;
+            max-width: 90%;
             z-index: 20;
             border: 1px dotted rgba(255,255,255,0.6);
-            padding: 2px; /* Very small padding */
-            border-radius: 2px;
-            line-height: 1; /* Tight line height */
+            padding: 4px;
         }
         
         #new-text {
             color: white; 
-            font-size: 20px; /* Default */
+            font-size: 24px;
             font-weight: bold;
             text-align: center; 
-            text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
             white-space: pre-wrap; 
             pointer-events: none; 
-            line-height: 1.1; /* Tight spacing for multi-line */
+            line-height: 1.2;
         }
 
         /* UI Helpers */
         .resizer {
-            position: absolute; width: 24px; height: 24px;
-            background: #3b82f6; border-radius: 50%;
-            bottom: -12px; right: -12px;
-            z-index: 30; border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: absolute; width: 28px; height: 28px;
+            background: #2563eb; border-radius: 50%;
+            bottom: -14px; right: -14px;
+            z-index: 30; border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
         
         .wiper-label {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 10px; color: rgba(255,255,255,0.8);
+            font-size: 11px; color: rgba(255,255,255,0.9);
             pointer-events: none; text-transform: uppercase; font-weight: bold;
-            text-shadow: 0 1px 2px black;
+            text-shadow: 0 1px 3px black;
             white-space: nowrap;
+            background: rgba(0,0,0,0.3); padding: 2px 6px; rounded: 4px;
         }
 
-        /* Capture Mode */
+        /* Capture Mode - Hiding UI */
         .capturing #wiper-box { border: none !important; box-shadow: none; }
         .capturing #new-text-container { border: none !important; }
         .capturing .resizer, .capturing .wiper-label { display: none !important; }
 
-        /* Controls */
+        /* Controls Panel */
         .controls {
             position: absolute; bottom: 0; left: 0; right: 0;
-            background: #0f172a;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
             border-top-left-radius: 20px; border-top-right-radius: 20px;
             padding: 15px; z-index: 100;
-            max-height: 45vh; overflow-y: auto;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            max-height: 50vh; overflow-y: auto;
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
 
-        .scroll-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .section-title { font-size: 10px; color: #94a3b8; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+
+        .scroll-row { display: flex; gap: 12px; overflow-x: auto; padding: 5px 2px; }
         .scroll-row::-webkit-scrollbar { display: none; }
         
-        .color-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); flex-shrink: 0; }
-        .color-dot.active { border-color: white; transform: scale(1.1); }
-        
-        .font-btn { padding: 5px 10px; background: #334155; color: white; border-radius: 6px; font-size: 12px; flex-shrink: 0; white-space: nowrap; }
-        .font-btn.active { background: #3b82f6; }
+        /* Color Dots */
+        .color-dot { 
+            width: 36px; height: 36px; 
+            border-radius: 50%; 
+            border: 2px solid rgba(255,255,255,0.2); 
+            flex-shrink: 0; 
+            position: relative;
+        }
+        .color-dot.active { border-color: white; transform: scale(1.15); box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .color-dot input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; }
 
-        #zoom-info {
-            position: absolute; top: 20px; right: 20px;
-            background: rgba(0,0,0,0.6); color: white;
-            padding: 5px 10px; border-radius: 20px;
-            font-size: 10px; pointer-events: none; z-index: 50;
+        /* Font Buttons */
+        .font-btn { 
+            padding: 8px 16px; 
+            background: #334155; color: white; 
+            border-radius: 8px; font-size: 13px; 
+            flex-shrink: 0; white-space: nowrap; 
+            border: 1px solid transparent;
+        }
+        .font-btn.active { background: #3b82f6; border-color: #93c5fd; font-weight: bold; }
+
+        #zoom-toast {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.7); color: white;
+            padding: 8px 16px; border-radius: 25px;
+            font-size: 12px; pointer-events: none; z-index: 50;
+            display: flex; align-items: center; gap: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
     </style>
 </head>
 <body>
 
-    <div id="zoom-info">Use 2 fingers to zoom</div>
+    <div id="zoom-toast">
+        <span>✌️</span> Use 2 fingers to zoom
+    </div>
 
     <div id="viewport">
         <div id="preview-container">
@@ -146,64 +169,76 @@
             
             <div id="wiper-box">
                 <div id="wiper-bg"></div>
-                <span class="wiper-label">Blur</span>
+                <span class="wiper-label">Hide Area</span>
                 <div class="resizer" id="resize-handle"></div>
             </div>
 
             <div id="new-text-container">
-                <div id="new-text">Text</div>
+                <div id="new-text">Type Here</div>
             </div>
         </div>
     </div>
 
     <!-- Controls -->
-    <div class="controls space-y-3">
-        <!-- Input Row -->
-        <div class="flex gap-2">
-            <button onclick="document.getElementById('file-upload').click()" class="bg-slate-700 p-3 rounded-lg text-white">📷</button>
+    <div class="controls space-y-4">
+        
+        <!-- Row 1: Tools -->
+        <div class="flex gap-2 items-center">
+            <button onclick="document.getElementById('file-upload').click()" class="bg-blue-600 p-3 rounded-xl text-white shadow-lg shrink-0">
+                📷 New Photo
+            </button>
             <input type="file" id="file-upload" accept="image/*" class="hidden" onchange="handleImage(event)">
             
-            <input type="text" id="text-input" placeholder="Edit Text..." class="flex-1 bg-slate-700 rounded-lg px-3 text-white outline-none" oninput="updateText(this.value)">
+            <input type="text" id="text-input" placeholder="Edit Text..." class="flex-1 bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition" oninput="updateText(this.value)">
             
-            <button onclick="resetZoom()" class="bg-slate-700 px-3 rounded-lg text-white text-xs font-bold whitespace-nowrap">Reset</button>
+            <button onclick="resetZoom()" class="bg-slate-700 p-3 rounded-xl text-white font-bold text-xs shrink-0">Reset View</button>
         </div>
 
-        <!-- Fonts & Colors -->
-        <div class="scroll-row">
-            <button class="font-btn active" onclick="setFont(this, 'Poppins')">Normal</button>
-            <button class="font-btn" onclick="setFont(this, 'Noto Sans Telugu')">తెలుగు</button>
-            <button class="font-btn" onclick="setFont(this, 'Dancing Script')">Cursive</button>
-            <button class="font-btn" onclick="setFont(this, 'Bangers')">BOLD</button>
-            <button class="font-btn" onclick="setFont(this, 'Roboto Mono')">Mono</button>
-            
-            <div class="w-[1px] bg-gray-600 mx-2"></div>
-            
-            <div class="color-dot active" style="background: white;" onclick="setColor(this, 'white')"></div>
-            <div class="color-dot" style="background: black;" onclick="setColor(this, 'black')"></div>
-            <div class="color-dot" style="background: #FFD700;" onclick="setColor(this, '#FFD700')"></div>
-            <div class="relative w-[30px] h-[30px] rounded-full overflow-hidden border-2 border-gray-500 bg-gray-700 flex items-center justify-center shrink-0">
-                <span class="text-[8px]">🎨</span>
-                <input type="color" class="absolute inset-0 opacity-0" oninput="setColor(this, this.value, true)">
+        <!-- Row 2: Text Colors -->
+        <div>
+            <div class="section-title">Text Color</div>
+            <div class="scroll-row">
+                <div class="color-dot active" style="background: white;" onclick="setColor(this, 'white')"></div>
+                <div class="color-dot" style="background: black;" onclick="setColor(this, 'black')"></div>
+                <div class="color-dot" style="background: #FF0000;" onclick="setColor(this, '#FF0000')"></div> <!-- Red -->
+                <div class="color-dot" style="background: #FFD700;" onclick="setColor(this, '#FFD700')"></div> <!-- Yellow -->
+                <div class="color-dot" style="background: #39FF14;" onclick="setColor(this, '#39FF14')"></div> <!-- Neon Green -->
+                <div class="color-dot" style="background: #00BFFF;" onclick="setColor(this, '#00BFFF')"></div> <!-- Blue -->
+                <div class="color-dot" style="background: #FF00FF;" onclick="setColor(this, '#FF00FF')"></div> <!-- Magenta -->
+                <!-- Rainbow Picker -->
+                <div class="color-dot" style="background: linear-gradient(45deg, red, orange, yellow, green, blue, purple);">
+                     <input type="color" oninput="setColor(this.parentElement, this.value, true)">
+                </div>
             </div>
         </div>
 
-        <!-- Sliders -->
-        <div class="grid grid-cols-2 gap-3">
+        <!-- Row 3: Fonts -->
+        <div>
+            <div class="section-title">Font Style</div>
+            <div class="scroll-row">
+                <button class="font-btn active" onclick="setFont(this, 'Poppins')">Normal</button>
+                <button class="font-btn" onclick="setFont(this, 'Noto Sans Telugu')">Telugu (తెలుగు)</button>
+                <button class="font-btn" onclick="setFont(this, 'Dancing Script')">Cursive</button>
+                <button class="font-btn" onclick="setFont(this, 'Bangers')">BOLD</button>
+                <button class="font-btn" onclick="setFont(this, 'Roboto Mono')">Typewriter</button>
+            </div>
+        </div>
+
+        <!-- Row 4: Sliders -->
+        <div class="grid grid-cols-2 gap-4 bg-slate-800/50 p-3 rounded-xl">
             <div>
-                <label class="text-[10px] text-gray-400 uppercase font-bold flex justify-between">
-                    Text Size <span id="size-val">20px</span>
-                </label>
-                <!-- UPDATED: Min value 6 for micro text -->
-                <input type="range" min="6" max="80" value="20" class="w-full h-1 bg-gray-600 rounded-lg appearance-none mt-2" oninput="updateTextSize(this.value)">
+                <label class="section-title flex justify-between">Text Size <span id="size-val" class="text-white">24px</span></label>
+                <input type="range" min="8" max="100" value="24" class="w-full h-1 bg-gray-600 rounded-lg appearance-none mt-2 cursor-pointer" oninput="updateTextSize(this.value)">
             </div>
             <div>
-                <label class="text-[10px] text-gray-400 uppercase font-bold">Blur Power</label>
-                <input type="range" min="0" max="40" value="15" class="w-full h-1 bg-gray-600 rounded-lg appearance-none mt-2" oninput="updateBlur(this.value)">
+                <label class="section-title">Blur Strength</label>
+                <input type="range" min="0" max="50" value="15" class="w-full h-1 bg-gray-600 rounded-lg appearance-none mt-2 cursor-pointer" oninput="updateBlur(this.value)">
             </div>
         </div>
 
-        <button id="share-btn" onclick="share()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 shadow-lg mt-1 text-sm">
-            Share on WhatsApp 🚀
+        <!-- Share -->
+        <button id="share-btn" onclick="share()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 shadow-xl text-base mt-2 transition active:scale-95">
+            Share HD Image on WhatsApp 🚀
         </button>
     </div>
 
@@ -219,13 +254,12 @@
         const resizeHandle = document.getElementById('resize-handle');
         const sizeVal = document.getElementById('size-val');
 
-        // State
         let state = { scale: 1, panning: false, pointX: 0, pointY: 0, startX: 0, startY: 0 };
         let mode = 'idle';
         let activeEl = null;
         let startDist = 0; let startScale = 1;
 
-        // --- Interaction Logic ---
+        // --- 1. Interaction Logic ---
         function setTransform() {
             container.style.transform = `translate(${state.pointX}px, ${state.pointY}px) scale(${state.scale})`;
         }
@@ -255,12 +289,14 @@
 
         function handleStart(pt) {
             const target = document.elementFromPoint(pt.clientX, pt.clientY);
+            // Hit Resizer?
             if (target === resizeHandle) {
                 mode = 'resize-element'; activeEl = wiperBox;
                 state.startX = pt.clientX; state.startY = pt.clientY;
                 state.initialW = wiperBox.offsetWidth; state.initialH = wiperBox.offsetHeight;
                 return;
             }
+            // Hit Draggable?
             if (wiperBox.contains(target) || textContainer.contains(target)) {
                 mode = 'drag-element';
                 activeEl = wiperBox.contains(target) ? wiperBox : textContainer;
@@ -268,6 +304,7 @@
                 state.initialLeft = activeEl.offsetLeft; state.initialTop = activeEl.offsetTop;
                 return;
             }
+            // Pan View
             mode = 'pan-view';
             state.startX = pt.clientX - state.pointX; state.startY = pt.clientY - state.pointY;
         }
@@ -276,7 +313,7 @@
             e.preventDefault();
             if (mode === 'zoom-view' && e.touches.length === 2) {
                 const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-                state.scale = Math.min(Math.max(startScale * (dist / startDist), 0.5), 6); // Max zoom increased to 6x
+                state.scale = Math.min(Math.max(startScale * (dist / startDist), 0.5), 6);
                 setTransform(); return;
             }
             handleMove(e.touches ? e.touches[0] : e);
@@ -285,6 +322,7 @@
 
         function handleMove(pt) {
             if (mode === 'idle') return;
+            
             if (mode === 'pan-view') {
                 state.pointX = pt.clientX - state.startX; state.pointY = pt.clientY - state.startY;
                 setTransform();
@@ -311,32 +349,50 @@
             wiperBg.style.top = -wiperBox.offsetTop + 'px';
         }
 
-        // App Logic
+        // --- 2. App Logic ---
+        
         function handleImage(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (evt) => {
                     const url = evt.target.result;
-                    mainBg.style.backgroundImage = `url(${url})`;
-                    wiperBg.style.backgroundImage = `url(${url})`;
-                    setTimeout(syncWiperBackground, 100);
+                    // Create an image object to get natural dimensions
+                    const img = new Image();
+                    img.onload = function() {
+                        const aspectRatio = this.naturalWidth / this.naturalHeight;
+                        
+                        // Update container aspect ratio to match IMAGE
+                        // This prevents cropping/stretching = High Quality
+                        container.style.aspectRatio = `${this.naturalWidth}/${this.naturalHeight}`;
+                        
+                        // Wait for layout update then set BG
+                        setTimeout(() => {
+                            mainBg.style.backgroundImage = `url(${url})`;
+                            wiperBg.style.backgroundImage = `url(${url})`;
+                            syncWiperBackground();
+                            resetZoom();
+                        }, 50);
+                    }
+                    img.src = url;
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        function updateText(val) { newText.innerText = val || "Text"; }
+        function updateText(val) { newText.innerText = val || "Type Here"; }
         function updateTextSize(val) { 
             newText.style.fontSize = val + 'px'; 
             sizeVal.innerText = val + 'px';
         }
         function updateBlur(val) { wiperBg.style.filter = `blur(${val}px)`; }
+        
         function setFont(btn, font) {
             newText.style.fontFamily = font;
             document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
+        
         function setColor(el, color, isInput) {
             newText.style.color = color;
             if(!isInput) {
@@ -345,38 +401,62 @@
             }
         }
 
+        // --- 3. Share HD Logic ---
         async function share() {
             const btn = document.getElementById('share-btn');
             const originalHTML = btn.innerHTML;
             const oldScale = state.scale; const oldX = state.pointX; const oldY = state.pointY;
             
+            // 1. Reset Zoom for clean capture
             resetZoom(); 
-            btn.innerHTML = "Processing..."; btn.disabled = true;
-            document.body.classList.add('capturing');
+            btn.innerHTML = `<span class="animate-spin text-xl">⏳</span> Generating HD...`; 
+            btn.disabled = true;
+            document.body.classList.add('capturing'); // Hide UI lines
 
             try {
-                await new Promise(r => setTimeout(r, 200));
-                const canvas = await html2canvas(container, { scale: 3, useCORS: true, backgroundColor: null });
+                // Wait for repaint
+                await new Promise(r => setTimeout(r, 300));
+                
+                // 2. Capture at 5x Scale (This is the HD Secret)
+                const canvas = await html2canvas(container, { 
+                    scale: 5, // High Resolution Capture
+                    useCORS: true, 
+                    allowTaint: true,
+                    backgroundColor: null,
+                    logging: false
+                });
+
                 canvas.toBlob(async (blob) => {
-                    const file = new File([blob], "edited_image.png", { type: "image/png" });
+                    // 3. Create File
+                    const file = new File([blob], "hd_whatsapp_edit.png", { type: "image/png" });
                     
+                    // Restore User View
                     state.scale = oldScale; state.pointX = oldX; state.pointY = oldY; setTransform();
                     
+                    // 4. Share
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try { await navigator.share({ files: [file] }); } catch(e) {}
+                        try { 
+                            await navigator.share({ files: [file] }); 
+                        } catch(e) {
+                            console.log("Share dismissed");
+                        }
                     } else {
                         const link = document.createElement('a');
-                        link.download = 'edited_image.png'; link.href = canvas.toDataURL(); link.click();
-                        alert("Saved to Gallery!");
+                        link.download = 'hd_whatsapp_edit.png'; link.href = canvas.toDataURL(); link.click();
+                        alert("HD Image Saved to Gallery!");
                     }
+                    
                     btn.innerHTML = originalHTML; btn.disabled = false;
                     document.body.classList.remove('capturing');
-                }, 'image/png');
+                }, 'image/png', 1.0); // 1.0 = Max Quality
+
             } catch(e) {
-                alert("Error"); btn.innerHTML = originalHTML; btn.disabled = false;
+                alert("Error: " + e.message); 
+                btn.innerHTML = originalHTML; btn.disabled = false;
                 document.body.classList.remove('capturing');
             }
         }
+        
         window.onload = syncWiperBackground;
     </script>
 </body>
