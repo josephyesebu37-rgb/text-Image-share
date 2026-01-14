@@ -2,242 +2,214 @@
 <html lang="te">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Super Style Editor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WhatsApp Micro Editor</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Loading Stylish Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Dancing+Script:wght@700&family=Lobster&family=Noto+Sans+Telugu:wght@400;700&family=Poppins:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #0f172a; touch-action: none; overflow: hidden; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #0f172a; 
+            touch-action: none; 
+            overflow: hidden; 
+            width: 100vw; height: 100vh;
+        }
         
-        /* --- Canvas Styles --- */
+        /* Viewport */
+        #viewport {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #1e293b;
+            position: relative;
+        }
+
+        /* The Card */
         #preview-container {
             position: relative;
-            width: 100%;
-            max-width: 380px;
+            width: 360px;
             aspect-ratio: 4/5;
-            margin: 0 auto;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             background-color: #334155;
-            touch-action: none;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transform-origin: center center;
         }
 
-        /* Layer 1: Sharp BG */
         #main-bg {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-size: cover;
-            background-position: center;
-            z-index: 1;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-size: cover; background-position: center; z-index: 1;
         }
 
-        /* Layer 2: Blur Box (Wiper) */
+        /* Wiper Box */
         #wiper-box {
             position: absolute;
             top: 30%; left: 10%;
-            width: 80%; height: 20%;
+            width: 60%; height: 15%;
             overflow: hidden;
             z-index: 5;
-            border: 2px dashed rgba(255, 255, 255, 0.6);
-            cursor: move;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            border-radius: 8px;
+            border: 1px dashed rgba(255, 255, 255, 0.9); /* Thinner border */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border-radius: 4px; /* Sharper corners for precision */
         }
-
+        
         #wiper-bg {
-            position: absolute;
-            top: 0; left: 0;
+            position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
-            background-size: cover;
-            background-position: center;
-            filter: blur(12px);
-            transform: scale(1.05);
+            background-size: cover; background-position: center;
+            filter: blur(12px); transform: scale(1.05);
         }
 
-        /* Layer 3: Draggable Text */
+        /* Text Container - Optimized for Micro Text */
         #new-text-container {
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            min-width: 50px;
-            max-width: 90%;
+            min-width: 20px; /* Allow very small width */
+            max-width: 95%;
             z-index: 20;
-            cursor: move;
-            border: 1px dotted rgba(255,255,255,0.3);
-            padding: 8px;
-            border-radius: 4px;
+            border: 1px dotted rgba(255,255,255,0.6);
+            padding: 2px; /* Very small padding */
+            border-radius: 2px;
+            line-height: 1; /* Tight line height */
         }
-
+        
         #new-text {
-            color: white;
-            font-size: 24px;
+            color: white; 
+            font-size: 20px; /* Default */
             font-weight: bold;
-            text-align: center;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-            white-space: pre-wrap;
-            pointer-events: none;
-            line-height: 1.3;
+            text-align: center; 
+            text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+            white-space: pre-wrap; 
+            pointer-events: none; 
+            line-height: 1.1; /* Tight spacing for multi-line */
         }
 
-        /* Helpers */
+        /* UI Helpers */
         .resizer {
-            position: absolute;
-            width: 24px; height: 24px;
-            background: #3b82f6;
-            border-radius: 50%;
+            position: absolute; width: 24px; height: 24px;
+            background: #3b82f6; border-radius: 50%;
             bottom: -12px; right: -12px;
-            cursor: se-resize;
-            z-index: 30;
-            border: 2px solid white;
+            z-index: 30; border: 2px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
+        
         .wiper-label {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 10px; color: rgba(255,255,255,0.5);
+            font-size: 10px; color: rgba(255,255,255,0.8);
             pointer-events: none; text-transform: uppercase; font-weight: bold;
+            text-shadow: 0 1px 2px black;
+            white-space: nowrap;
         }
 
         /* Capture Mode */
         .capturing #wiper-box { border: none !important; box-shadow: none; }
         .capturing #new-text-container { border: none !important; }
-        .capturing .resizer { display: none !important; }
-        .capturing .wiper-label { display: none; }
+        .capturing .resizer, .capturing .wiper-label { display: none !important; }
 
-        /* --- UI Controls Styles --- */
-        .control-panel {
-            background: #1e293b;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            z-index: 50;
+        /* Controls */
+        .controls {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: #0f172a;
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+            padding: 15px; z-index: 100;
+            max-height: 45vh; overflow-y: auto;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
         }
+
+        .scroll-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .scroll-row::-webkit-scrollbar { display: none; }
         
-        /* Scrollable areas for fonts/colors */
-        .scroll-row {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding-bottom: 5px;
-            -webkit-overflow-scrolling: touch;
-        }
-        .scroll-row::-webkit-scrollbar { display: none; } /* Hide scrollbar */
-
-        .color-dot {
-            width: 30px; height: 30px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.2);
-            flex-shrink: 0;
-            cursor: pointer;
-        }
+        .color-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); flex-shrink: 0; }
         .color-dot.active { border-color: white; transform: scale(1.1); }
+        
+        .font-btn { padding: 5px 10px; background: #334155; color: white; border-radius: 6px; font-size: 12px; flex-shrink: 0; white-space: nowrap; }
+        .font-btn.active { background: #3b82f6; }
 
-        .font-btn {
-            padding: 5px 12px;
-            background: #334155;
-            color: white;
-            border-radius: 8px;
-            font-size: 12px;
-            white-space: nowrap;
-            flex-shrink: 0;
-            border: 1px solid transparent;
+        #zoom-info {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(0,0,0,0.6); color: white;
+            padding: 5px 10px; border-radius: 20px;
+            font-size: 10px; pointer-events: none; z-index: 50;
         }
-        .font-btn.active { background: #3b82f6; border-color: #60a5fa; }
-
     </style>
 </head>
-<body class="h-screen flex flex-col">
+<body>
 
-    <!-- Header -->
-    <div class="p-2 text-center bg-gray-900 shrink-0">
-        <h1 class="text-white font-bold text-sm opacity-80">✨ WhatsApp Style Editor</h1>
-    </div>
+    <div id="zoom-info">Use 2 fingers to zoom</div>
 
-    <!-- Canvas Area -->
-    <div class="flex-1 flex items-center justify-center p-4 bg-gray-900 relative overflow-hidden">
+    <div id="viewport">
         <div id="preview-container">
             <div id="main-bg"></div>
             
             <div id="wiper-box">
                 <div id="wiper-bg"></div>
-                <span class="wiper-label">Blur Box</span>
+                <span class="wiper-label">Blur</span>
                 <div class="resizer" id="resize-handle"></div>
             </div>
 
             <div id="new-text-container">
-                <div id="new-text">Type Message Here</div>
+                <div id="new-text">Text</div>
             </div>
         </div>
     </div>
 
     <!-- Controls -->
-    <div class="control-panel w-full p-4 space-y-4 shadow-2xl">
-        
-        <!-- Row 1: Upload & Input -->
-        <div class="flex gap-2 items-center">
-            <button onclick="document.getElementById('file-upload').click()" class="bg-slate-700 p-3 rounded-lg text-white hover:bg-slate-600">
-                📷
-            </button>
+    <div class="controls space-y-3">
+        <!-- Input Row -->
+        <div class="flex gap-2">
+            <button onclick="document.getElementById('file-upload').click()" class="bg-slate-700 p-3 rounded-lg text-white">📷</button>
             <input type="file" id="file-upload" accept="image/*" class="hidden" onchange="handleImage(event)">
             
-            <div class="flex-1 relative">
-                <input type="text" id="text-input" placeholder="Type here..." class="w-full bg-slate-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-2 focus:ring-blue-500" oninput="updateText(this.value)">
+            <input type="text" id="text-input" placeholder="Edit Text..." class="flex-1 bg-slate-700 rounded-lg px-3 text-white outline-none" oninput="updateText(this.value)">
+            
+            <button onclick="resetZoom()" class="bg-slate-700 px-3 rounded-lg text-white text-xs font-bold whitespace-nowrap">Reset</button>
+        </div>
+
+        <!-- Fonts & Colors -->
+        <div class="scroll-row">
+            <button class="font-btn active" onclick="setFont(this, 'Poppins')">Normal</button>
+            <button class="font-btn" onclick="setFont(this, 'Noto Sans Telugu')">తెలుగు</button>
+            <button class="font-btn" onclick="setFont(this, 'Dancing Script')">Cursive</button>
+            <button class="font-btn" onclick="setFont(this, 'Bangers')">BOLD</button>
+            <button class="font-btn" onclick="setFont(this, 'Roboto Mono')">Mono</button>
+            
+            <div class="w-[1px] bg-gray-600 mx-2"></div>
+            
+            <div class="color-dot active" style="background: white;" onclick="setColor(this, 'white')"></div>
+            <div class="color-dot" style="background: black;" onclick="setColor(this, 'black')"></div>
+            <div class="color-dot" style="background: #FFD700;" onclick="setColor(this, '#FFD700')"></div>
+            <div class="relative w-[30px] h-[30px] rounded-full overflow-hidden border-2 border-gray-500 bg-gray-700 flex items-center justify-center shrink-0">
+                <span class="text-[8px]">🎨</span>
+                <input type="color" class="absolute inset-0 opacity-0" oninput="setColor(this, this.value, true)">
             </div>
         </div>
 
-        <!-- Row 2: Styles (Fonts & Colors) -->
-        <div class="space-y-3">
-            <!-- Fonts -->
-            <div class="scroll-row" id="font-list">
-                <button class="font-btn active" onclick="setFont(this, 'Poppins')" style="font-family: 'Poppins';">Simple</button>
-                <button class="font-btn" onclick="setFont(this, 'Noto Sans Telugu')" style="font-family: 'Noto Sans Telugu';">తెలుగు</button>
-                <button class="font-btn" onclick="setFont(this, 'Dancing Script')" style="font-family: 'Dancing Script';">Cursive</button>
-                <button class="font-btn" onclick="setFont(this, 'Bangers')" style="font-family: 'Bangers'; letter-spacing: 1px;">BOLD</button>
-                <button class="font-btn" onclick="setFont(this, 'Lobster')" style="font-family: 'Lobster';">Fancy</button>
-                <button class="font-btn" onclick="setFont(this, 'Roboto Mono')" style="font-family: 'Roboto Mono';">Typewriter</button>
+        <!-- Sliders -->
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="text-[10px] text-gray-400 uppercase font-bold flex justify-between">
+                    Text Size <span id="size-val">20px</span>
+                </label>
+                <!-- UPDATED: Min value 6 for micro text -->
+                <input type="range" min="6" max="80" value="20" class="w-full h-1 bg-gray-600 rounded-lg appearance-none mt-2" oninput="updateTextSize(this.value)">
             </div>
-
-            <!-- Colors -->
-            <div class="scroll-row">
-                <div class="color-dot active" style="background: #ffffff;" onclick="setColor(this, '#ffffff')"></div>
-                <div class="color-dot" style="background: #000000;" onclick="setColor(this, '#000000')"></div>
-                <div class="color-dot" style="background: #FFD700;" onclick="setColor(this, '#FFD700')"></div> <!-- Yellow -->
-                <div class="color-dot" style="background: #FF0055;" onclick="setColor(this, '#FF0055')"></div> <!-- Pink/Red -->
-                <div class="color-dot" style="background: #39FF14;" onclick="setColor(this, '#39FF14')"></div> <!-- Neon Green -->
-                <div class="color-dot" style="background: #00BFFF;" onclick="setColor(this, '#00BFFF')"></div> <!-- Sky Blue -->
-                <div class="color-dot" style="background: #FF4500;" onclick="setColor(this, '#FF4500')"></div> <!-- Orange -->
-                <div class="color-dot" style="background: #9D00FF;" onclick="setColor(this, '#9D00FF')"></div> <!-- Purple -->
-                <!-- Native Picker -->
-                <div class="relative w-[30px] h-[30px] rounded-full overflow-hidden border-2 border-gray-500 flex items-center justify-center bg-gray-700">
-                    <span class="text-[8px] text-white">🎨</span>
-                    <input type="color" class="absolute inset-0 opacity-0 cursor-pointer" oninput="setColor(this, this.value, true)">
-                </div>
-            </div>
-        </div>
-
-        <!-- Row 3: Sliders -->
-        <div class="flex gap-4">
-            <div class="flex-1">
-                <label class="text-[10px] text-gray-400 uppercase font-bold">Text Size</label>
-                <input type="range" min="12" max="60" value="24" class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer mt-2" oninput="updateTextSize(this.value)">
-            </div>
-            <div class="flex-1">
+            <div>
                 <label class="text-[10px] text-gray-400 uppercase font-bold">Blur Power</label>
-                <input type="range" min="0" max="30" value="12" class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer mt-2" oninput="updateBlur(this.value)">
+                <input type="range" min="0" max="40" value="15" class="w-full h-1 bg-gray-600 rounded-lg appearance-none mt-2" oninput="updateBlur(this.value)">
             </div>
         </div>
 
-        <!-- Share Button -->
-        <button id="share-btn" onclick="share()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition active:scale-95 flex justify-center items-center gap-2 shadow-lg mt-1">
+        <button id="share-btn" onclick="share()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 shadow-lg mt-1 text-sm">
             Share on WhatsApp 🚀
         </button>
-
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-        // DOM Elements
+        const viewport = document.getElementById('viewport');
         const container = document.getElementById('preview-container');
         const mainBg = document.getElementById('main-bg');
         const wiperBox = document.getElementById('wiper-box');
@@ -245,157 +217,168 @@
         const textContainer = document.getElementById('new-text-container');
         const newText = document.getElementById('new-text');
         const resizeHandle = document.getElementById('resize-handle');
+        const sizeVal = document.getElementById('size-val');
 
-        // --- 1. Image Handler ---
+        // State
+        let state = { scale: 1, panning: false, pointX: 0, pointY: 0, startX: 0, startY: 0 };
+        let mode = 'idle';
+        let activeEl = null;
+        let startDist = 0; let startScale = 1;
+
+        // --- Interaction Logic ---
+        function setTransform() {
+            container.style.transform = `translate(${state.pointX}px, ${state.pointY}px) scale(${state.scale})`;
+        }
+        function resetZoom() {
+            state.scale = 1; state.pointX = 0; state.pointY = 0;
+            setTransform();
+        }
+
+        viewport.addEventListener('touchstart', onTouchStart, {passive: false});
+        viewport.addEventListener('mousedown', onMouseDown);
+        document.addEventListener('touchmove', onTouchMove, {passive: false});
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('touchend', onEnd);
+        document.addEventListener('mouseup', onEnd);
+
+        function onTouchStart(e) {
+            e.preventDefault();
+            if (e.touches.length === 2) {
+                mode = 'zoom-view';
+                startDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                startScale = state.scale;
+                return;
+            }
+            handleStart(e.touches[0]);
+        }
+        function onMouseDown(e) { handleStart(e); }
+
+        function handleStart(pt) {
+            const target = document.elementFromPoint(pt.clientX, pt.clientY);
+            if (target === resizeHandle) {
+                mode = 'resize-element'; activeEl = wiperBox;
+                state.startX = pt.clientX; state.startY = pt.clientY;
+                state.initialW = wiperBox.offsetWidth; state.initialH = wiperBox.offsetHeight;
+                return;
+            }
+            if (wiperBox.contains(target) || textContainer.contains(target)) {
+                mode = 'drag-element';
+                activeEl = wiperBox.contains(target) ? wiperBox : textContainer;
+                state.startX = pt.clientX; state.startY = pt.clientY;
+                state.initialLeft = activeEl.offsetLeft; state.initialTop = activeEl.offsetTop;
+                return;
+            }
+            mode = 'pan-view';
+            state.startX = pt.clientX - state.pointX; state.startY = pt.clientY - state.pointY;
+        }
+
+        function onTouchMove(e) {
+            e.preventDefault();
+            if (mode === 'zoom-view' && e.touches.length === 2) {
+                const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                state.scale = Math.min(Math.max(startScale * (dist / startDist), 0.5), 6); // Max zoom increased to 6x
+                setTransform(); return;
+            }
+            handleMove(e.touches ? e.touches[0] : e);
+        }
+        function onMouseMove(e) { handleMove(e); }
+
+        function handleMove(pt) {
+            if (mode === 'idle') return;
+            if (mode === 'pan-view') {
+                state.pointX = pt.clientX - state.startX; state.pointY = pt.clientY - state.startY;
+                setTransform();
+            } else if (mode === 'drag-element' && activeEl) {
+                const dx = (pt.clientX - state.startX) / state.scale;
+                const dy = (pt.clientY - state.startY) / state.scale;
+                activeEl.style.left = (state.initialLeft + dx) + 'px';
+                activeEl.style.top = (state.initialTop + dy) + 'px';
+                if (activeEl === wiperBox) syncWiperBackground();
+            } else if (mode === 'resize-element') {
+                const dx = (pt.clientX - state.startX) / state.scale;
+                const dy = (pt.clientY - state.startY) / state.scale;
+                wiperBox.style.width = (state.initialW + dx) + 'px';
+                wiperBox.style.height = (state.initialH + dy) + 'px';
+                syncWiperBackground();
+            }
+        }
+        function onEnd() { mode = 'idle'; activeEl = null; }
+
+        function syncWiperBackground() {
+            wiperBg.style.width = container.offsetWidth + 'px';
+            wiperBg.style.height = container.offsetHeight + 'px';
+            wiperBg.style.left = -wiperBox.offsetLeft + 'px';
+            wiperBg.style.top = -wiperBox.offsetTop + 'px';
+        }
+
+        // App Logic
         function handleImage(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (evt) => {
-                    const imgUrl = evt.target.result;
-                    mainBg.style.backgroundImage = `url(${imgUrl})`;
-                    wiperBg.style.backgroundImage = `url(${imgUrl})`;
-                    syncWiperBackground(); 
+                    const url = evt.target.result;
+                    mainBg.style.backgroundImage = `url(${url})`;
+                    wiperBg.style.backgroundImage = `url(${url})`;
+                    setTimeout(syncWiperBackground, 100);
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        // --- 2. Style Updates ---
-        function updateText(val) { newText.innerText = val || "Type Message Here"; }
-        function updateTextSize(val) { newText.style.fontSize = val + "px"; }
+        function updateText(val) { newText.innerText = val || "Text"; }
+        function updateTextSize(val) { 
+            newText.style.fontSize = val + 'px'; 
+            sizeVal.innerText = val + 'px';
+        }
         function updateBlur(val) { wiperBg.style.filter = `blur(${val}px)`; }
-        
-        function setFont(btn, fontName) {
-            newText.style.fontFamily = fontName;
-            // Update active state
+        function setFont(btn, font) {
+            newText.style.fontFamily = font;
             document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
-
-        function setColor(element, color, isInput = false) {
+        function setColor(el, color, isInput) {
             newText.style.color = color;
-            // Handle active state for dots (skip if it's the native picker input)
-            if (!isInput) {
+            if(!isInput) {
                 document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-                element.classList.add('active');
+                el.classList.add('active');
             }
         }
 
-        // --- 3. Sync Logic ---
-        function syncWiperBackground() {
-            const containerRect = container.getBoundingClientRect();
-            const wiperRect = wiperBox.getBoundingClientRect();
-            wiperBg.style.width = containerRect.width + 'px';
-            wiperBg.style.height = containerRect.height + 'px';
-            const offsetX = wiperRect.left - containerRect.left;
-            const offsetY = wiperRect.top - containerRect.top;
-            wiperBg.style.left = `-${offsetX}px`;
-            wiperBg.style.top = `-${offsetY}px`;
-        }
-
-        // --- 4. Drag Logic (Unified) ---
-        let activeElement = null;
-        let isResizing = false;
-        let startX, startY;
-        let initialLeft, initialTop, initialWidth, initialHeight;
-        
-        wiperBox.addEventListener('touchstart', (e) => startDrag(e, wiperBox), {passive: false});
-        wiperBox.addEventListener('mousedown', (e) => startDrag(e, wiperBox));
-        textContainer.addEventListener('touchstart', (e) => startDrag(e, textContainer), {passive: false});
-        textContainer.addEventListener('mousedown', (e) => startDrag(e, textContainer));
-        resizeHandle.addEventListener('touchstart', startResize, {passive: false});
-        resizeHandle.addEventListener('mousedown', startResize);
-
-        document.addEventListener('touchmove', handleMove, {passive: false});
-        document.addEventListener('mousemove', handleMove);
-        document.addEventListener('touchend', endInteraction);
-        document.addEventListener('mouseup', endInteraction);
-
-        function startDrag(e, element) {
-            if (e.target === resizeHandle) return;
-            e.preventDefault();
-            activeElement = element;
-            const pt = e.touches ? e.touches[0] : e;
-            startX = pt.clientX;
-            startY = pt.clientY;
-            initialLeft = element.offsetLeft;
-            initialTop = element.offsetTop;
-        }
-
-        function startResize(e) {
-            e.stopPropagation(); e.preventDefault();
-            isResizing = true;
-            const pt = e.touches ? e.touches[0] : e;
-            startX = pt.clientX;
-            startY = pt.clientY;
-            initialWidth = wiperBox.offsetWidth;
-            initialHeight = wiperBox.offsetHeight;
-        }
-
-        function handleMove(e) {
-            if (!activeElement && !isResizing) return;
-            e.preventDefault();
-            const pt = e.touches ? e.touches[0] : e;
-            const dx = pt.clientX - startX;
-            const dy = pt.clientY - startY;
-
-            if (activeElement) {
-                let newLeft = initialLeft + dx;
-                let newTop = initialTop + dy;
-                activeElement.style.left = `${newLeft}px`;
-                activeElement.style.top = `${newTop}px`;
-                if (activeElement === wiperBox) syncWiperBackground();
-            }
-
-            if (isResizing) {
-                wiperBox.style.width = `${initialWidth + dx}px`;
-                wiperBox.style.height = `${initialHeight + dy}px`;
-                syncWiperBackground();
-            }
-        }
-
-        function endInteraction() {
-            activeElement = null;
-            isResizing = false;
-        }
-
-        // --- 5. Share Logic ---
         async function share() {
             const btn = document.getElementById('share-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `Generating...`;
-            btn.disabled = true;
-            container.classList.add('capturing');
+            const originalHTML = btn.innerHTML;
+            const oldScale = state.scale; const oldX = state.pointX; const oldY = state.pointY;
+            
+            resetZoom(); 
+            btn.innerHTML = "Processing..."; btn.disabled = true;
+            document.body.classList.add('capturing');
 
             try {
-                await new Promise(r => setTimeout(r, 100));
-                const canvas = await html2canvas(container, {
-                    scale: 3, useCORS: true, backgroundColor: null
-                });
+                await new Promise(r => setTimeout(r, 200));
+                const canvas = await html2canvas(container, { scale: 3, useCORS: true, backgroundColor: null });
                 canvas.toBlob(async (blob) => {
-                    const file = new File([blob], "status_hd.png", { type: "image/png" });
+                    const file = new File([blob], "edited_image.png", { type: "image/png" });
+                    
+                    state.scale = oldScale; state.pointX = oldX; state.pointY = oldY; setTransform();
+                    
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try { await navigator.share({ files: [file] }); } catch (err) {}
+                        try { await navigator.share({ files: [file] }); } catch(e) {}
                     } else {
                         const link = document.createElement('a');
-                        link.download = 'status_hd.png';
-                        link.href = canvas.toDataURL();
-                        link.click();
+                        link.download = 'edited_image.png'; link.href = canvas.toDataURL(); link.click();
                         alert("Saved to Gallery!");
                     }
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    container.classList.remove('capturing');
+                    btn.innerHTML = originalHTML; btn.disabled = false;
+                    document.body.classList.remove('capturing');
                 }, 'image/png');
-            } catch (err) {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                container.classList.remove('capturing');
+            } catch(e) {
+                alert("Error"); btn.innerHTML = originalHTML; btn.disabled = false;
+                document.body.classList.remove('capturing');
             }
         }
+        window.onload = syncWiperBackground;
     </script>
 </body>
 </html>
-
 
